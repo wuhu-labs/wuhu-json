@@ -76,14 +76,14 @@ public enum JSONValue: Sendable, Hashable, Codable {
     switch any {
     case is NSNull:
       return .null
-    case let value as Bool:
-      return .bool(value)
-    case let value as Int:
-      return .number(Double(value))
-    case let value as Double:
-      return .number(value)
-    case let value as Float:
-      return .number(Double(value))
+    case let value as NSNumber:
+      // __NSCFBoolean vs __NSCFNumber: NSNumber.boolValue returns true
+      // for any non-zero number, so `as? Bool` on __NSCFNumber(1) succeeds.
+      // CFGetTypeID disambiguates them reliably.
+      if CFGetTypeID(value) == CFBooleanGetTypeID() {
+        return .bool(value.boolValue)
+      }
+      return .number(value.doubleValue)
     case let value as String:
       return .string(value)
     case let value as [Any]:
