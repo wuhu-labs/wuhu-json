@@ -72,18 +72,40 @@ public enum JSONValue: Sendable, Hashable, Codable {
     }
   }
 
+  public static func parse(_ text: String) -> JSONValue? {
+    guard let data = text.data(using: .utf8) else { return nil }
+    return try? JSONDecoder().decode(JSONValue.self, from: data)
+  }
+
+  public func jsonString(sortedKeys: Bool = false) -> String {
+    let encoder = JSONEncoder()
+    if sortedKeys {
+      encoder.outputFormatting = .sortedKeys
+    }
+    guard let data = try? encoder.encode(self),
+          let string = String(data: data, encoding: .utf8)
+    else { return "null" }
+    return string
+  }
+
+  // MARK: - Legacy Foundation bridge
+
+  /// Convert from `JSONSerialization`-produced `Any` hierarchies.
+  ///
+  /// Prefer ``parse(_:)`` for string-to-JSONValue conversion — it uses
+  /// `JSONDecoder` and doesn't suffer from NSNumber bridging ambiguity.
   public static func fromAny(_ any: Any) throws -> JSONValue {
     switch any {
     case is NSNull:
       return .null
-    case let value as NSNumber:
-      // __NSCFBoolean vs __NSCFNumber: NSNumber.boolValue returns true
-      // for any non-zero number, so `as? Bool` on __NSCFNumber(1) succeeds.
-      // CFGetTypeID disambiguates them reliably.
-      if CFGetTypeID(value) == CFBooleanGetTypeID() {
-        return .bool(value.boolValue)
-      }
-      return .number(value.doubleValue)
+    case let value as Bool:
+      return .bool(value)
+    case let value as Int:
+      return .number(Double(value))
+    case let value as Double:
+      return .number(value)
+    case let value as Float:
+      return .number(Double(value))
     case let value as String:
       return .string(value)
     case let value as [Any]:
