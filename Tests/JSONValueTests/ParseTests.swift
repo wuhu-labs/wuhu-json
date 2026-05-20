@@ -45,3 +45,25 @@ import Testing
         #expect(str == #"{"a":1,"b":2}"#)
     }
 }
+
+extension ParseTests {
+    @Test func intValueFromNumber() {
+        let v = JSONValue.parse(#"{"n": 42}"#)!
+        guard case let .object(obj) = v else { return }
+        #expect(obj["n"]?.intValue == 42)
+    }
+
+    @Test func intValueFromFractional() {
+        let v = JSONValue.parse(#"{"n": 3.14}"#)!
+        guard case let .object(obj) = v else { return }
+        #expect(obj["n"]?.intValue == nil)
+    }
+
+    @Test func intValueFromBool() {
+        #expect(JSONValue.bool(true).intValue == nil)
+    }
+
+    @Test func intValueFromString() {
+        #expect(JSONValue.string("42").intValue == nil)
+    }
+}

@@ -161,6 +161,11 @@ public extension JSONValue {
     return nil
   }
 
+  var intValue: Int? {
+    if case let .number(value) = self, value.isFinite, let exact = Int(exactly: value) { return exact }
+    return nil
+  }
+
   var boolValue: Bool? {
     if case let .bool(value) = self { return value }
     return nil
